@@ -71,6 +71,22 @@ int main() {
 	//variable to control time itself
 	Clock clock;
 
+	//time bar
+	RectangleShape timeBar;
+	float timeBarStartWidth = 400*OBJSCALE;
+	float timeBarHeight = 80*OBJSCALE;
+	timeBar.setSize(Vector2f(timeBarStartWidth, timeBarHeight));
+	timeBar.setScale(OBJSCALE, OBJSCALE);
+	timeBar.setFillColor(Color::Red);
+	timeBar.setPosition((vm.width / 2) - (timeBarStartWidth / 2), vm.height-110);
+	std::cout << "Width: " << vm.width << "Height: " << vm.height<< std::endl;
+
+
+	Time gameTotalTime;
+	float timeRemaing = 6.0f;
+	float timeBarWidthPerSecond = timeBarStartWidth / timeRemaing;
+
+
 	//bool for pausing the game
 	bool paused = true;
 
@@ -92,7 +108,6 @@ int main() {
 	scoreText.setString("Score = 0");
 
 	//seting the text size
-	//std::cout << *((float)vm.width / 1920) << std::endl;
 	messageText.setCharacterSize((int)(75 * ((float)vm.width / 1920)));
 	scoreText.setCharacterSize((int)(60 * ((float)vm.width / 1920)));
 
@@ -120,12 +135,39 @@ int main() {
 		}
 		if (Keyboard::isKeyPressed(Keyboard::Enter)) {
 			paused = false;
+
+			//reset the time and the score
+			score = 0;
+			timeRemaing = 5;
 		}
 		
 		//pause moving the obj before pressing enter
 		if(!paused){
 			//Measure time
 			Time dt = clock.restart();// restart the clock
+
+			//subtract from the remaining time
+			timeRemaing -= dt.asSeconds();
+			//size up the time bar
+			timeBar.setSize(Vector2f(timeBarWidthPerSecond * timeRemaing, timeBarHeight));
+
+
+			if (timeRemaing <= 0.0f) {
+				//pause the game
+				paused = true;
+
+				//change the message to be shown to the player
+				messageText.setString("Out of time!!");
+				
+				//Reposition the text based on the new string
+				textRect = messageText.getLocalBounds();
+				messageText.setOrigin(textRect.left +
+					textRect.width / 2.0f,
+					textRect.top +
+					textRect.height / 2.0f);
+				messageText.setPosition(vm.getDesktopMode().width / 2.0f, vm.getDesktopMode().height / 2.0f);
+			}
+
 
 									  //setup the bee
 			moveSprite(300,200,20, beeActive, beeSpeed,200 , beeSprite, dt);
@@ -156,6 +198,10 @@ int main() {
 		
 		//drawing the score
 		window.draw(scoreText);
+		
+		//drawing the time bar
+		window.draw(timeBar);
+
 		if (paused) {
 			//drawing the message
 			window.draw(messageText);
