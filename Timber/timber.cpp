@@ -1,11 +1,14 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <sstream>
 using namespace sf;
 
 void moveSprite(int min,int width, int n, bool &beeActive, float &beeSpeed, int minSpeed, sf::Sprite &beeSprite, sf::Time &dt);
 int main() {
-	VideoMode vm(1366, 768);
+	//VideoMode vm(1366, 768);
+	VideoMode vm(VideoMode::getDesktopMode().width,VideoMode::getDesktopMode().height);
 	//VideoMode vm(1280, 1024);
+	const float OBJSCALE = (((float)vm.width / 1920));
 
 	RenderWindow window(vm, "Timber!!", Style::Resize);
 	
@@ -16,13 +19,15 @@ int main() {
 	spriteBackground.setTexture(textureBackground);/* attach texture to the sprite */
 
 	spriteBackground.setPosition(0, 0);/* set sprite to cover the screen */
+	spriteBackground.setScale(OBJSCALE, OBJSCALE);
 
 	// adding tree
 	Texture treeTexture;
 	treeTexture.loadFromFile("../graphics/tree.png");
 	Sprite treeSprite;
 	treeSprite.setTexture(treeTexture);
-	treeSprite.setPosition(810, 0);
+	treeSprite.setScale(OBJSCALE, OBJSCALE);
+	treeSprite.setPosition(800*OBJSCALE, 0);
 
 	// adding bee
 	Texture beeTexture;
@@ -30,6 +35,7 @@ int main() {
 	Sprite beeSprite;
 	beeSprite.setTexture(beeTexture);
 	beeSprite.setPosition(0, 600);
+	beeSprite.setScale(OBJSCALE, OBJSCALE);
 	bool beeActive = false;
 	float beeSpeed = 0.0f;
 	
@@ -45,6 +51,10 @@ int main() {
 	cloudSprite1.setTexture(cloudTexture);
 	cloudSprite2.setTexture(cloudTexture);
 	cloudSprite3.setTexture(cloudTexture);
+
+	cloudSprite1.setScale(OBJSCALE, OBJSCALE);
+	cloudSprite2.setScale(OBJSCALE, OBJSCALE);
+	cloudSprite3.setScale(OBJSCALE, OBJSCALE);
 
 	cloudSprite1.setPosition(0, 0);
 	cloudSprite2.setPosition(0, 250);
@@ -63,6 +73,42 @@ int main() {
 
 	//bool for pausing the game
 	bool paused = true;
+
+	//draw some text
+	int score = 0;
+	Text messageText;
+	Text scoreText;
+
+	//choose a font
+	Font font;
+	font.loadFromFile("../fonts/KOMIKAP_.ttf");
+
+	//setting the font
+	messageText.setFont(font);
+	scoreText.setFont(font);
+
+	//assigning the actual message
+	messageText.setString("Press Enter to start!");
+	scoreText.setString("Score = 0");
+
+	//seting the text size
+	//std::cout << *((float)vm.width / 1920) << std::endl;
+	messageText.setCharacterSize((int)(75 * ((float)vm.width / 1920)));
+	scoreText.setCharacterSize((int)(60 * ((float)vm.width / 1920)));
+
+	//choose a color
+	messageText.setFillColor(Color::White);
+	scoreText.setFillColor(Color::White);
+
+	//position the text
+	FloatRect textRect = messageText.getLocalBounds();
+	//change the origin of the text message to the center of the textRect
+	messageText.setOrigin(textRect.left +
+		textRect.width / 2.0f,
+		textRect.top +
+		textRect.height / 2.0f);
+	messageText.setPosition(vm.getDesktopMode().width/2.0f, vm.getDesktopMode().height/2.0f);
+	scoreText.setPosition(20, 20);
 
 
 	while (window.isOpen()) {
@@ -87,6 +133,11 @@ int main() {
 			moveSprite(0,150,30, cloud1Active, cloud1Speed,10 , cloudSprite1, dt);
 			moveSprite(0,200,40, cloud2Active, cloud2Speed, 25, cloudSprite2, dt);
 			moveSprite(0,100,50, cloud3Active, cloud3Speed,5 , cloudSprite3, dt);
+
+			// updating the score text
+			std::stringstream ss;
+			ss << "Score = " << score;
+			scoreText.setString(ss.str());
 		}
 
 		window.clear();
@@ -102,7 +153,13 @@ int main() {
 
 		// drawing the bee
 		window.draw(beeSprite);
-
+		
+		//drawing the score
+		window.draw(scoreText);
+		if (paused) {
+			//drawing the message
+			window.draw(messageText);
+		}
 
 		window.display();/*we write to a hidden surface then display it to avoiding glitch*/
 	}
@@ -119,7 +176,6 @@ void moveSprite(int min,int width,int n, bool &beeActive, float &beeSpeed, int m
 		srand((int)time(0) * n);
 		float height = (rand() % width)+min;
 		beeSprite.setPosition(1366, height);
-		std::cout << height << std::endl;
 		beeActive = true;
 	}//moving the bee
 	else {
