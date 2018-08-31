@@ -61,6 +61,9 @@ int main() {
 	//variable to control time itself
 	Clock clock;
 
+	//bool for pausing the game
+	bool paused = true;
+
 
 	while (window.isOpen()) {
 		if (Keyboard::isKeyPressed(Keyboard::Escape)) {
@@ -69,15 +72,22 @@ int main() {
 		if (Mouse::isButtonPressed(Mouse::Right)) {
 			window.close();
 		}
-		//Measure time
-		Time dt = clock.restart();// restart the clock
+		if (Keyboard::isKeyPressed(Keyboard::Enter)) {
+			paused = false;
+		}
+		
+		//pause moving the obj before pressing enter
+		if(!paused){
+			//Measure time
+			Time dt = clock.restart();// restart the clock
 
-		//setup the bee
-		moveSprite(300,200,20, beeActive, beeSpeed,200 , beeSprite, dt);
-		//setup the cloud
-		moveSprite(0,150,30, cloud1Active, cloud1Speed,10 , cloudSprite1, dt);
-		moveSprite(0,200,40, cloud2Active, cloud2Speed, 25, cloudSprite2, dt);
-		moveSprite(0,100,50, cloud3Active, cloud3Speed,5 , cloudSprite3, dt);
+									  //setup the bee
+			moveSprite(300,200,20, beeActive, beeSpeed,200 , beeSprite, dt);
+			//setup the cloud
+			moveSprite(0,150,30, cloud1Active, cloud1Speed,10 , cloudSprite1, dt);
+			moveSprite(0,200,40, cloud2Active, cloud2Speed, 25, cloudSprite2, dt);
+			moveSprite(0,100,50, cloud3Active, cloud3Speed,5 , cloudSprite3, dt);
+		}
 
 		window.clear();
 		window.draw(spriteBackground);/* draws our game scene */
