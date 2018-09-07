@@ -1,9 +1,22 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <sstream>
+#pragma warning(disable:4996)
+//#pragma warning ( disable : 4789 )
 using namespace sf;
 
+
 void moveSprite(int min,int width, int n, bool &beeActive, float &beeSpeed, int minSpeed, sf::Sprite &beeSprite, sf::Time &dt);
+void updateBranches(int seed);
+const int NUM_BRANCHES = 6;
+Sprite branches[NUM_BRANCHES];
+
+enum side {
+	LEFT,RIGHT,NONE
+};
+
+side branchPositions[NUM_BRANCHES];
+
 int main() {
 	//VideoMode vm(1366, 768);
 	VideoMode vm(VideoMode::getDesktopMode().width,VideoMode::getDesktopMode().height);
@@ -68,8 +81,65 @@ int main() {
 	float cloud2Speed = 0.0f;
 	float cloud3Speed = 0.0f;
 
+	//Prepare 6 branches
+	Texture branchTexture;
+	branchTexture.loadFromFile("../graphics/branch.png");
+	//Set the texture for each branch sprite
+	for (int i = 0; i < NUM_BRANCHES; i++) {
+		branches[i].setTexture(branchTexture);
+		branches[i].setPosition(-2000 * OBJSCALE, -2000 * OBJSCALE);
+
+		//set the sprite's origin to dead center
+		//we can then spin it around without changing its position
+		branches[i].setOrigin(220 * OBJSCALE, 20 * OBJSCALE);
+	}
+	//prepare the player
+	Texture playerTexture;
+	playerTexture.loadFromFile("../graphics/player.png");
+	Sprite playerSprite;
+	playerSprite.setTexture(playerTexture);
+	playerSprite.setPosition(580 * OBJSCALE, 720 * OBJSCALE);
+	playerSprite.setScale(OBJSCALE, OBJSCALE);
+
+	//initial side of the player
+	side playerSide = side::LEFT;
+
+	//prepare the gravestone
+	Texture RIPTexture;
+	RIPTexture.loadFromFile("../graphics/rip.png");
+	Sprite RIPSprite;
+	RIPSprite.setTexture(RIPTexture);
+	RIPSprite.setPosition(600 * OBJSCALE, 860 * OBJSCALE);
+	RIPSprite.setScale(OBJSCALE, OBJSCALE);
+
+	//prepare the axe
+	Texture axeTexture;
+	axeTexture.loadFromFile("../graphics/axe.png");
+	Sprite axeSprite;
+	axeSprite.setTexture(axeTexture);
+	axeSprite.setPosition(700 * OBJSCALE, 830 * OBJSCALE);
+	axeSprite.setScale(OBJSCALE, OBJSCALE);
+
+	//line the axe up with the tree
+	const float AXE_POSITION_LEFT = 700 * OBJSCALE;
+	const float AXE_POSITION_RIGHT = 1075 * OBJSCALE;
+
 	//variable to control time itself
 	Clock clock;
+
+	// prepare the flying log
+	Texture logTexture;
+	logTexture.loadFromFile("../graphics/log.png");
+	Sprite logSprite;
+	logSprite.setTexture(logTexture);
+	logSprite.setPosition(800*OBJSCALE,720*OBJSCALE);
+	logSprite.setScale(OBJSCALE, OBJSCALE);
+
+	//some other useful log related variable
+	bool logActive = false;//moving or not
+	float logSpeedX = 1000;
+	float logSpeedY = -1500;
+
 
 	//time bar
 	RectangleShape timeBar;
@@ -125,7 +195,11 @@ int main() {
 	messageText.setPosition(vm.getDesktopMode().width/2.0f, vm.getDesktopMode().height/2.0f);
 	scoreText.setPosition(20, 20);
 
-
+	updateBranches(1);
+	updateBranches(2);
+	updateBranches(3);
+	updateBranches(4);
+	updateBranches(5);
 	while (window.isOpen()) {
 		if (Keyboard::isKeyPressed(Keyboard::Escape)) {
 			window.close();
@@ -180,6 +254,25 @@ int main() {
 			std::stringstream ss;
 			ss << "Score = " << score;
 			scoreText.setString(ss.str());
+			//update the branch sprite
+			for (int i = 0; i < NUM_BRANCHES; i++) {
+				float height = i * 150 * OBJSCALE;
+				if (branchPositions[i] == side::LEFT) {
+					//move the branch to the left side
+					branches[i].setPosition(610 * OBJSCALE, height);
+					//Flip the sprite round the other way
+					branches[i].setRotation(180);
+				}
+				else if (branchPositions[i] == side::RIGHT) {
+					//move the sprite to the right side
+					branches[i].setPosition(1300 * OBJSCALE, height);
+					//set the sprite rotation to normal
+					branches[i].setRotation(0);
+				} else {
+					// hide the branch
+					branches[i].setPosition(3000 * OBJSCALE, height);
+				}
+			}
 		}
 
 		window.clear();
@@ -190,8 +283,25 @@ int main() {
 		window.draw(cloudSprite2);
 		window.draw(cloudSprite3);
 
+		// drawing the branches
+		for (int i = 0; i < NUM_BRANCHES; i++) {
+			window.draw(branches[i]);
+		}
+
 		// drawing the tree
 		window.draw(treeSprite);
+
+		//drawing the player
+		window.draw(playerSprite);
+
+		//drawing the axe
+		window.draw(axeSprite);
+
+		//drawing the log
+		window.draw(logSprite);
+
+		//drawing the rip
+		window.draw(RIPSprite);
 
 		// drawing the bee
 		window.draw(beeSprite);
@@ -234,5 +344,29 @@ void moveSprite(int min,int width,int n, bool &beeActive, float &beeSpeed, int m
 			//setup the bee agin
 			beeActive = false;
 		}
+	}
+}
+
+void updateBranches(int seed) {
+	// move all the branches down one place
+	for (int j = NUM_BRANCHES -1 ; j > 0; j--) {
+		branchPositions[j] = branchPositions[j - 1];
+		//(branchPositions[j - 1] == side::LEFT ? side::LEFT : (branchPositions[j - 1] == side::RIGHT ? side::RIGHT : side::NONE));
+	}
+	
+	//spawn a new branch at position 0
+	//Left right none
+	srand((int)(time(0)) + seed);
+	int r = (rand() % 5);
+	switch (r) {
+	case 0:
+		branchPositions[0] = side::LEFT;
+		break;
+	case 1:
+		branchPositions[0] = side::RIGHT;
+		break;
+	default:
+		branchPositions[0] = side::NONE;
+		break;
 	}
 }
