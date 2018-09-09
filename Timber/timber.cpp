@@ -9,6 +9,7 @@ using namespace sf;
 
 
 void moveSprite(int min,int width, int n, bool &beeActive, float &beeSpeed, int minSpeed, sf::Sprite &beeSprite, sf::Time &dt);
+void updateScore(std::stringstream &ss, int score, sf::Text &scoreText);
 void updateBranches(int seed);
 const int NUM_BRANCHES = 6;
 Sprite branches[NUM_BRANCHES];
@@ -198,6 +199,10 @@ int main() {
 	messageText.setPosition(vm.getDesktopMode().width/2.0f, vm.getDesktopMode().height/2.0f);
 	scoreText.setPosition(20, 20);
 
+	//string stream for updating score
+	std::stringstream ss;
+
+
 	//updateBranches(1);
 	//updateBranches(2);
 	//updateBranches(3);
@@ -275,6 +280,7 @@ int main() {
 				//put the player on the right
 				playerSide = side::RIGHT;
 				score++;
+				updateScore(ss, score, scoreText);
 
 				//add to the amount of time remaining
 				timeRemaining += (2 / score) + .15;//more score less time added
@@ -302,6 +308,7 @@ int main() {
 				//put the player on the left
 				playerSide = side::LEFT;
 				score++;
+				updateScore(ss, score, scoreText);
 
 				//add time to the remaining time
 				timeRemaining += (2 / score) + 0.15;
@@ -365,10 +372,6 @@ int main() {
 			moveSprite(0,200,40, cloud2Active, cloud2Speed, 25, cloudSprite2, dt);
 			moveSprite(0,100,50, cloud3Active, cloud3Speed,5 , cloudSprite3, dt);
 
-			// updating the score text
-			std::stringstream ss;
-			ss << "Score = " << score;
-			scoreText.setString(ss.str());
 			//update the branch sprite
 			for (int i = 0; i < NUM_BRANCHES; i++) {
 				float height = i * 150 * OBJSCALE;
@@ -478,6 +481,13 @@ int main() {
 		window.display();/*we write to a hidden surface then display it to avoiding glitch*/
 	}
 	return 0;
+}
+
+void updateScore(std::stringstream &ss, int score, sf::Text &scoreText) {
+	// updating the score text
+	ss << "Score = " << score;
+	scoreText.setString(ss.str());
+	ss.seekp(0);
 }
 
 void moveSprite(int min,int width,int n, bool &beeActive, float &beeSpeed, int minSpeed, sf::Sprite &beeSprite, sf::Time &dt) {
