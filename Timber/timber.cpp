@@ -109,7 +109,7 @@ int main() {
 	RIPTexture.loadFromFile("../graphics/rip.png");
 	Sprite RIPSprite;
 	RIPSprite.setTexture(RIPTexture);
-	RIPSprite.setPosition(600 * OBJSCALE, 860 * OBJSCALE);
+	RIPSprite.setPosition(2000 * OBJSCALE, 860 * OBJSCALE);
 	RIPSprite.setScale(OBJSCALE, OBJSCALE);
 
 	//prepare the axe
@@ -149,12 +149,11 @@ int main() {
 	timeBar.setScale(OBJSCALE, OBJSCALE);
 	timeBar.setFillColor(Color::Red);
 	timeBar.setPosition((vm.width / 2) - (timeBarStartWidth / 2), vm.height-110);
-	std::cout << "Width: " << vm.width << "Height: " << vm.height<< std::endl;
 
 
 	Time gameTotalTime;
-	float timeRemaing = 6.0f;
-	float timeBarWidthPerSecond = timeBarStartWidth / timeRemaing;
+	float timeRemaining = 6.0f;
+	float timeBarWidthPerSecond = timeBarStartWidth / timeRemaining;
 
 
 	//bool for pausing the game
@@ -195,12 +194,29 @@ int main() {
 	messageText.setPosition(vm.getDesktopMode().width/2.0f, vm.getDesktopMode().height/2.0f);
 	scoreText.setPosition(20, 20);
 
-	updateBranches(1);
-	updateBranches(2);
-	updateBranches(3);
-	updateBranches(4);
-	updateBranches(5);
+	//updateBranches(1);
+	//updateBranches(2);
+	//updateBranches(3);
+	//updateBranches(4);
+	//updateBranches(5);
+
+	//control the player input
+	bool acceptInput = false;
+
 	while (window.isOpen()) {
+
+		Event event;
+		while (window.pollEvent(event)) {
+			if (event.type == Event::KeyReleased && !paused) {
+				//Listen for key press again
+				acceptInput = true;
+
+				//hide the axe
+				axeSprite.setPosition(2000, axeSprite.getPosition().y);
+			}
+		}
+
+
 		if (Keyboard::isKeyPressed(Keyboard::Escape)) {
 			window.close();
 		}
@@ -212,21 +228,92 @@ int main() {
 
 			//reset the time and the score
 			score = 0;
-			timeRemaing = 5;
+			timeRemaining = 5;
+
+			//make all the branches disapear
+			for (int i = 0; i < NUM_BRANCHES; i++) {
+				branchPositions[i] = side::NONE;
+			}
+
+			//Make sure the gravestone is hidden
+			RIPSprite.setPosition(675 * OBJSCALE, 2000 * OBJSCALE);
+
+			//move the player into starting position
+			playerSprite.setPosition(580 * OBJSCALE, 720 * OBJSCALE);
+			acceptInput = true;
+		}
+
+		//wrap the player controls to
+		//make sure we are accepting input
+		if (acceptInput) {
+
+			//accepting the right arrow
+			if (Keyboard::isKeyPressed(Keyboard::Right)) {
+				//put the player on the right
+				playerSide = side::RIGHT;
+				score++;
+
+				//add to the amount of time remaining
+				timeRemaining += (2 / score) + .15;//more score less time added
+				axeSprite.setPosition(AXE_POSITION_RIGHT, axeSprite.getPosition().y);
+
+				playerSprite.setPosition(1200 * OBJSCALE, 720 * OBJSCALE);
+
+				
+				//update the branches
+				updateBranches(score);
+
+				//put the log on the left
+				logSprite.setPosition(800 * OBJSCALE, 720 * OBJSCALE);
+				logSpeedX = -5000;
+				logActive = true;
+				acceptInput = false;
+
+			}
+
+			// accepting the left arrow key
+			if (Keyboard::isKeyPressed(Keyboard::Left)) {
+				//put the player on the left
+				playerSide = side::LEFT;
+				score++;
+
+				//add time to the remaining time
+				timeRemaining += (2 / score) + 0.15;
+
+				axeSprite.setPosition(AXE_POSITION_LEFT, axeSprite.getPosition().y);
+
+
+				playerSprite.setPosition(580 * OBJSCALE, 720 * OBJSCALE);
+
+				//update the branches
+				updateBranches(score);
+
+				//put the log on the left
+				logSprite.setPosition(800 * OBJSCALE, 720 * OBJSCALE);
+
+				logSpeedX = 5000;
+				logActive = true;
+
+				acceptInput = false;
+
+			}
 		}
 		
-		//pause moving the obj before pressing enter
+		// pause moving the obj before pressing enter
 		if(!paused){
+			for (int i = 0; i < NUM_BRANCHES; i++) {
+				std::cout << "no." << i << "b p: " << branchPositions[i] <<"player side "<< playerSide << std::endl;
+			}
 			//Measure time
 			Time dt = clock.restart();// restart the clock
 
 			//subtract from the remaining time
-			timeRemaing -= dt.asSeconds();
+			timeRemaining -= dt.asSeconds();
 			//size up the time bar
-			timeBar.setSize(Vector2f(timeBarWidthPerSecond * timeRemaing, timeBarHeight));
+			timeBar.setSize(Vector2f(timeBarWidthPerSecond * timeRemaining, timeBarHeight));
 
 
-			if (timeRemaing <= 0.0f) {
+			if (timeRemaining <= 0.0f) {
 				//pause the game
 				paused = true;
 
@@ -273,7 +360,42 @@ int main() {
 					branches[i].setPosition(3000 * OBJSCALE, height);
 				}
 			}
+			// handle moving log
+			if (logActive) {
+				logSprite.setPosition(logSprite.getPosition().x + (logSpeedX*dt.asSeconds()), logSprite.getPosition().y + (logSpeedY*dt.asSeconds()));
+
+				//if the log reaches the right edge
+				if (logSprite.getPosition().x < 0 || logSprite.getPosition().x > 2000 ) {
+					//set it up ready to be a whole new log next frame
+					logActive = false;
+					logSprite.setPosition(800 * OBJSCALE, 720 * OBJSCALE);
+				}
+			}
+
+			//has the player squished
+			if (branchPositions[5] == playerSide) {
+				// death
+				paused = true;
+				acceptInput = false;
+				//remove if any log flying
+				logSprite.setPosition(2000 * OBJSCALE, 720 * OBJSCALE);
+				//draw RIP
+				RIPSprite.setPosition(525 * OBJSCALE, 760 * OBJSCALE);
+
+				//hide the player
+				playerSprite.setPosition(2000, 660);
+
+				//display message
+				messageText.setString("Squished!");
+
+				//center the message on the screen
+				textRect = messageText.getLocalBounds();
+				messageText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
+				messageText.setPosition(vm.getDesktopMode().width / 2.0f, vm.getDesktopMode().height / 2.0f);
+
+			}
 		}
+
 
 		window.clear();
 		window.draw(spriteBackground);/* draws our game scene */
