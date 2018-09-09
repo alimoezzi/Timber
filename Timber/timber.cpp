@@ -1,8 +1,10 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <iostream>
 #include <sstream>
 #pragma warning(disable:4996)
 //#pragma warning ( disable : 4789 )
+#define SOUND_LEVEL 10
 using namespace sf;
 
 
@@ -22,6 +24,8 @@ int main() {
 	VideoMode vm(VideoMode::getDesktopMode().width,VideoMode::getDesktopMode().height);
 	//VideoMode vm(1280, 1024);
 	const float OBJSCALE = (((float)vm.width / 1920));
+	const float OBJSCALE_W = (((float)vm.width / 1920));
+	const float OBJSCALE_H = (((float)vm.height / 1080));
 
 	RenderWindow window(vm, "Timber!!", Style::Resize);
 	
@@ -203,6 +207,25 @@ int main() {
 	//control the player input
 	bool acceptInput = false;
 
+	//prepare the sound
+	SoundBuffer chopingBuffer;
+	chopingBuffer.loadFromFile("../sound/chop.wav");
+	Sound choping;
+	choping.setBuffer(chopingBuffer);
+	choping.setVolume(SOUND_LEVEL);
+
+	SoundBuffer deathBuffer;
+	deathBuffer.loadFromFile("../sound/death.wav");
+	Sound death;
+	death.setBuffer(deathBuffer);
+	death.setVolume(SOUND_LEVEL);
+
+	SoundBuffer ootBuffer;
+	ootBuffer.loadFromFile("../sound/out_of_time.wav");
+	Sound oot;
+	oot.setBuffer(ootBuffer);
+	oot.setVolume(SOUND_LEVEL);
+
 	while (window.isOpen()) {
 
 		Event event;
@@ -269,6 +292,9 @@ int main() {
 				logActive = true;
 				acceptInput = false;
 
+				//play sound
+				choping.play();
+
 			}
 
 			// accepting the left arrow key
@@ -296,14 +322,15 @@ int main() {
 
 				acceptInput = false;
 
+				choping.play();
 			}
 		}
 		
 		// pause moving the obj before pressing enter
 		if(!paused){
-			for (int i = 0; i < NUM_BRANCHES; i++) {
+			/*for (int i = 0; i < NUM_BRANCHES; i++) {
 				std::cout << "no." << i << "b p: " << branchPositions[i] <<"player side "<< playerSide << std::endl;
-			}
+			}*/
 			//Measure time
 			Time dt = clock.restart();// restart the clock
 
@@ -327,6 +354,7 @@ int main() {
 					textRect.top +
 					textRect.height / 2.0f);
 				messageText.setPosition(vm.getDesktopMode().width / 2.0f, vm.getDesktopMode().height / 2.0f);
+				oot.play();
 			}
 
 
@@ -377,8 +405,13 @@ int main() {
 				// death
 				paused = true;
 				acceptInput = false;
+
 				//remove if any log flying
 				logSprite.setPosition(2000 * OBJSCALE, 720 * OBJSCALE);
+
+				//hide the axe
+				axeSprite.setPosition(2000, axeSprite.getPosition().y);
+
 				//draw RIP
 				RIPSprite.setPosition(525 * OBJSCALE, 760 * OBJSCALE);
 
@@ -387,6 +420,9 @@ int main() {
 
 				//display message
 				messageText.setString("Squished!");
+
+				//play sound
+				death.play();
 
 				//center the message on the screen
 				textRect = messageText.getLocalBounds();
