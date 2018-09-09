@@ -9,7 +9,7 @@ using namespace sf;
 
 
 void moveSprite(int min,int width, int n, bool &beeActive, float &beeSpeed, int minSpeed, sf::Sprite &beeSprite, sf::Time &dt);
-void updateScore(std::stringstream &ss, int score, sf::Text &scoreText);
+void updateScore(int score, sf::Text &scoreText, sf::FloatRect &fr, sf::RectangleShape &scoreRect);
 void updateBranches(int seed);
 const int NUM_BRANCHES = 6;
 Sprite branches[NUM_BRANCHES];
@@ -189,6 +189,8 @@ int main() {
 	messageText.setFillColor(Color::White);
 	scoreText.setFillColor(Color::White);
 
+	
+
 	//position the text
 	FloatRect textRect = messageText.getLocalBounds();
 	//change the origin of the text message to the center of the textRect
@@ -199,8 +201,18 @@ int main() {
 	messageText.setPosition(vm.getDesktopMode().width/2.0f, vm.getDesktopMode().height/2.0f);
 	scoreText.setPosition(20, 20);
 
-	//string stream for updating score
-	std::stringstream ss;
+
+	//RectangleShape msgRect;
+	RectangleShape scoreRect;
+	//msgRect.setPosition(messageText.getPosition);
+	FloatRect fr = scoreText.getLocalBounds();
+	scoreRect.setPosition(scoreText.getPosition().x, scoreText.getPosition().y);
+	std::cout << scoreText.getPosition().x << scoreText.getPosition().y << std::endl;
+	scoreRect.setSize(Vector2f(fr.left +
+		fr.width,
+		fr.top +
+		fr.height));
+	scoreRect.setFillColor(sf::Color(0, 0, 0, 150));
 
 
 	//updateBranches(1);
@@ -256,6 +268,7 @@ int main() {
 
 			//reset the time and the score
 			score = 0;
+			updateScore(score, scoreText,fr,scoreRect);
 			timeRemaining = 5;
 
 			//make all the branches disapear
@@ -280,7 +293,7 @@ int main() {
 				//put the player on the right
 				playerSide = side::RIGHT;
 				score++;
-				updateScore(ss, score, scoreText);
+				updateScore(score, scoreText, fr, scoreRect);
 
 				//add to the amount of time remaining
 				timeRemaining += (2 / score) + .15;//more score less time added
@@ -308,7 +321,7 @@ int main() {
 				//put the player on the left
 				playerSide = side::LEFT;
 				score++;
-				updateScore(ss, score, scoreText);
+				updateScore(score, scoreText, fr, scoreRect);
 
 				//add time to the remaining time
 				timeRemaining += (2 / score) + 0.15;
@@ -468,6 +481,7 @@ int main() {
 		window.draw(beeSprite);
 		
 		//drawing the score
+		window.draw(scoreRect);
 		window.draw(scoreText);
 		
 		//drawing the time bar
@@ -483,11 +497,21 @@ int main() {
 	return 0;
 }
 
-void updateScore(std::stringstream &ss, int score, sf::Text &scoreText) {
+void updateScore(int score, sf::Text &scoreText, sf::FloatRect &fr, sf::RectangleShape &scoreRect) {
+	//string stream for updating score
+	std::stringstream ss;
 	// updating the score text
+	std::cout << score << std::endl;
 	ss << "Score = " << score;
 	scoreText.setString(ss.str());
 	ss.seekp(0);
+	ss.seekg(0);
+	fr = scoreText.getLocalBounds();
+	scoreRect.setPosition(scoreText.getPosition().x, scoreText.getPosition().y);
+	scoreRect.setSize(Vector2f(fr.left +
+		fr.width+3,
+		fr.top +
+		fr.height+3));
 }
 
 void moveSprite(int min,int width,int n, bool &beeActive, float &beeSpeed, int minSpeed, sf::Sprite &beeSprite, sf::Time &dt) {
